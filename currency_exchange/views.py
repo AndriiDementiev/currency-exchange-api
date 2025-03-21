@@ -9,6 +9,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import requests
 from decimal import Decimal
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter
+)
 
 from .models import CurrencyExchange, UserBalance
 from .serializers import (
@@ -17,13 +22,24 @@ from .serializers import (
     UserBalanceSerializer
 )
 
-
+@extend_schema(
+    summary="Register a new user",
+    description="Endpoint for user registration. "
+                "Automatically creates a balance for the new user.",
+    request=UserRegistrationSerializer,
+    responses={201: UserRegistrationSerializer}
+)
 class RegisterUserView(generics.CreateAPIView):
     queryset = settings.AUTH_USER_MODEL.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
 
+@extend_schema(
+    summary="Get user balance",
+    description="Retrieve the current balance of the authenticated user.",
+    responses={200: UserBalanceSerializer}
+)
 class GetUserBalanceView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -33,6 +49,13 @@ class GetUserBalanceView(APIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    summary="Get currency exchange rate",
+    description="Retrieve the exchange rate for a "
+                "specified currency. Costs 1 balance point.",
+    request={"type": "object", "properties": {"currency_code": {"type": "string"}}},
+    responses={201: CurrencyExchangeSerializer}
+)
 class GetExchangeRateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -94,6 +117,27 @@ class GetExchangeRateView(APIView):
             )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List exchange history",
+        description="Retrieve the list of past exchange "
+                    "requests made by the authenticated user.",
+        parameters=[
+            OpenApiParameter(
+                name="currency",
+                description="Filter by currency code",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="date",
+                description="Filter by exchange date (YYYY-MM-DD)",
+                required=False,
+                type=str,
+            ),
+        ],
+    )
+)
 class GetExchangeHistoryView(generics.ListAPIView):
     serializer_class = CurrencyExchangeSerializer
     permission_classes = [permissions.IsAuthenticated]

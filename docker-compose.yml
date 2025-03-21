@@ -19,7 +19,6 @@ services:
 
   web:
     build: .
-    command: sh -c "/app/entrypoint.sh"
     ports:
       - "8000:8000"
     depends_on:

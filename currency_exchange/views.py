@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import (
     generics,
@@ -22,6 +23,9 @@ from .serializers import (
     UserBalanceSerializer
 )
 
+
+User = get_user_model()
+
 @extend_schema(
     summary="Register a new user",
     description="Endpoint for user registration. "
@@ -30,7 +34,7 @@ from .serializers import (
     responses={201: UserRegistrationSerializer}
 )
 class RegisterUserView(generics.CreateAPIView):
-    queryset = settings.AUTH_USER_MODEL.objects.all()
+    queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
